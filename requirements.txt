@@ -1,0 +1,7 @@
+wikipedia==1.4.0
+langchain-core==1.4.9
+langchain-ollama==1.1.0
+langchain-protocol==0.0.18
+langsmith==0.10.3
+faiss-cpu==1.14.3
+numpy==2.5.1
