@@ -17,7 +17,7 @@ from qdrant_client.http.models import (
     VectorParams,
 )
 
-from schemas import (
+from src.chunking.schema import (
     Coach,
     Competition,
     Match,

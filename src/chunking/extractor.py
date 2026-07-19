@@ -6,7 +6,7 @@ from langchain_ollama import ChatOllama
 
 from src.chunking.schema import EntitySchema
 
-from schemas import (
+from src.chunking.schema import (
     Player,
     Coach,
     Stadium,
