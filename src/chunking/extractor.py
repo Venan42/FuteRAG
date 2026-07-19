@@ -4,6 +4,8 @@ from typing import Optional, Type, Union
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 
+from src.chunking.schema import EntitySchema
+
 from schemas import (
     Player,
     Coach,
@@ -12,11 +14,17 @@ from schemas import (
     Competition,
     Match,
 )
-from src.pipeline.prompts import EXTRACTION_SYSTEM_PROMPT
+from src.chunking.prompt import EXTRACTION_SYSTEM_PROMPT
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_LLM_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.1"
+                             )
 logger = logging.getLogger(__name__)
-
-EntitySchema = Union[Player, Coach, Stadium, Team, Competition, Match]
 
 ENTITY_SCHEMA_MAP: dict[str, Type[EntitySchema]] = {
     "jogador": Player,
@@ -41,7 +49,7 @@ def _get_schema(entity_type: str) -> Type[EntitySchema]:
 
 def _build_extraction_chain(
     schema: Type[EntitySchema],
-    model_name: str = "llama3.1",
+    model_name: str = OLLAMA_BASE_URL,
     temperature: float = 0.0,
 ):
     """Monta a chain LangChain: prompt -> LLM com saída estruturada no schema."""

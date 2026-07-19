@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
 from datetime import date
+from typing import TypeAlias
 
 class Gender(str, Enum):
     MALE = "Masculino"
@@ -111,3 +112,6 @@ class Match(BaseModel):
     away_goals: Optional[int] = Field(default=None, description="Gols marcados pelo visitante")
 
     summary: str = Field(description="Se houver texto, um resumo de como foi a partida (ex: finais épicas).")
+
+
+EntitySchema: TypeAlias = Player | Coach | Stadium | Team | Competition | Match
