@@ -31,7 +31,6 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "futerag")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
@@ -55,7 +54,7 @@ def get_client() -> QdrantClient:
     """Retorna uma instância singleton do cliente Qdrant."""
     global _client
     if _client is None:
-        _client = QdrantClient(url=QDRANT_URL)
+        _client = QdrantClient(path="./qdrant_data")
     return _client
 
 

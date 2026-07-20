@@ -22,8 +22,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_LLM_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.1"
-                             )
+OLLAMA_LLM_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.1")
+
 logger = logging.getLogger(__name__)
 
 ENTITY_SCHEMA_MAP: dict[str, Type[EntitySchema]] = {
@@ -49,12 +49,13 @@ def _get_schema(entity_type: str) -> Type[EntitySchema]:
 
 def _build_extraction_chain(
     schema: Type[EntitySchema],
-    model_name: str = OLLAMA_BASE_URL,
+    model_name: Optional[str] = None,
     temperature: float = 0.0,
 ):
     """Monta a chain LangChain: prompt -> LLM com saída estruturada no schema."""
-    llm = ChatOllama(model=model_name, temperature=temperature)
-    structured_llm = llm.with_structured_output(schema)
+    resolved_model = model_name or os.getenv("OLLAMA_LLM_MODEL", "llama3.1")
+    llm = ChatOllama(model=resolved_model, temperature=temperature, base_url=OLLAMA_BASE_URL)
+    structured_llm = llm.with_structured_output(schema, method="function_calling")
 
     prompt = ChatPromptTemplate.from_messages(
         [
