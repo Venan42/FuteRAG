@@ -10,5 +10,8 @@ _wiki = wikipediaapi.Wikipedia(
 
 def fetch_wikipedia_article(target_name: str) -> Optional[str]:
     """Busca o texto bruto de um artigo da Wikipédia em português."""
+    print(f"[wikipedia_source] Buscando artigo: {target_name}")
     page = _wiki.page(target_name)
-    return page.text if page.exists() else None
+    encontrado = page.exists()
+    print(f"[wikipedia_source] Pagina encontrada: {encontrado}")
+    return page.text if encontrado else None

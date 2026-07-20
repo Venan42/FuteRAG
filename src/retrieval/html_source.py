@@ -32,10 +32,14 @@ def _extract_readable_text(html: str) -> str:
 
 def fetch_html_page(url: str) -> Optional[str]:
     """Busca e extrai o conteúdo textual de uma página HTML arbitrária."""
+    print(f"[html_source] Buscando pagina: {url}")
     try:
         response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        print(f"[html_source] Falha na requisicao: {exc}")
         return None
 
-    return _extract_readable_text(response.text)
+    texto = _extract_readable_text(response.text)
+    print(f"[html_source] Texto extraido, tamanho: {len(texto)} caracteres")
+    return texto
