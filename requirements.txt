@@ -4,7 +4,10 @@ langchain-ollama>=0.1.0
 langchain-community>=0.2.0
 langgraph>=0.1.0
 pydantic>=2.7.0
-wikipedia>=1.4.0
+beautifulsoup4
+requests
+wikipedia-api
+tavily-python
 qdrant-client>=1.9.0
 python-dotenv>=1.0.0
 streamlit>=1.59.2
