@@ -123,6 +123,10 @@ def extract_entity(
         try:
             print(f"[extractor] Tentativa {attempts + 1} | tipo={entity_type}")
             result = chain.invoke({"raw_text": input_text})
+
+            if result is None:
+                raise ValueError("Modelo nao retornou extracao estruturada (tool call nao invocada)")
+
             print(f"[extractor] Extracao bem-sucedida | tipo={entity_type}")
             return result
 

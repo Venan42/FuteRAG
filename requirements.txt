@@ -4,7 +4,6 @@ langchain-ollama>=0.1.0
 langchain-community>=0.2.0
 langgraph>=0.1.0
 pydantic>=2.7.0
-beautifulsoup4
 requests
 wikipedia-api
 tavily-python

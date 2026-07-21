@@ -61,10 +61,14 @@ def check_database_node(state: GraphState) -> GraphState:
 def web_search_node(state: GraphState) -> GraphState:
     """Busca o texto bruto sobre o alvo identificado, tentando múltiplas fontes."""
     print(f"[nodes] Etapa: web_search | target_name={state['target_name']}")
-    state["raw_wikipedia_text"] = fetch_entity_text(state["target_name"])
-    print(f"[nodes] Texto encontrado: {'sim' if state['raw_wikipedia_text'] else 'nao'}")
+    text = fetch_entity_text(state["target_name"])
+    state["raw_wikipedia_text"] = text
+    if text:
+        print(f"[nodes] Texto obtido: {len(text)} caracteres")
+        print(f"[nodes] Preview: {text[:300]}")
+    else:
+        print("[nodes] Texto encontrado: nao")
     return state
-
 
 def extraction_node(state: GraphState) -> GraphState:
     """Extrai a entidade estruturada a partir do texto bruto recuperado."""

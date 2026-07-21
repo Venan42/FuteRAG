@@ -18,28 +18,24 @@ def get_tavily_client() -> TavilyClient:
     return _client
 
 
-def find_sofascore_url(target_name: str) -> Optional[str]:
-    """Busca a URL da página de um jogador/time no sofascore via Tavily."""
-    print(f"[search_source] Buscando URL no Sofascore para: {target_name}")
+def search_web_content(target_name: str) -> Optional[str]:
+    """Busca informações sobre uma entidade na web via Tavily, retornando o conteúdo já agregado."""
+    print(f"[search_source] Buscando na web: {target_name}")
 
     client = get_tavily_client()
     response = client.search(
-        query=target_name,
-        include_domains=["sofascore.com"],
+        query=f"{target_name} futebol história estatísticas títulos",
         max_results=5,
     )
 
-    print(f"[search_source] Resposta bruta da Tavily: {response}")
-
     results = response.get("results", [])
-    print(f"[search_source] Total de resultados retornados: {len(results)}")
+    print(f"[search_source] Resultados retornados: {len(results)}")
 
-    for result in results:
-        url = result.get("url", "")
-        print(f"[search_source] Avaliando URL: {url}")
-        if "/player/" in url or "/team/" in url:
-            print(f"[search_source] URL aceita: {url}")
-            return url
+    contents = [r.get("content", "") for r in results if r.get("content")]
+    if not contents:
+        print("[search_source] Nenhum conteudo util encontrado")
+        return None
 
-    print("[search_source] Nenhuma URL válida encontrada")
-    return None
+    combined = "\n\n".join(contents)
+    print(f"[search_source] Conteudo agregado: {len(combined)} caracteres")
+    return combined
