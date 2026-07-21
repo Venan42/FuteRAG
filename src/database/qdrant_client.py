@@ -220,3 +220,11 @@ def exists_by_name(name: str, entity_type: str) -> bool:
     point_id = _generate_point_id(entity_type, name)
     result = get_client().retrieve(collection_name=COLLECTION_NAME, ids=[point_id])
     return len(result) > 0
+
+def delete_entity(name: str, entity_type: str) -> bool:
+    """Remove uma entidade do Qdrant pelo nome e tipo, permitindo reextração."""
+    point_id = _generate_point_id(entity_type, name)
+    print(f"[qdrant_client] Removendo entidade | tipo={entity_type} | nome={name} | id={point_id}")
+
+    get_client().delete(collection_name=COLLECTION_NAME, points_selector=[point_id])
+    return True
