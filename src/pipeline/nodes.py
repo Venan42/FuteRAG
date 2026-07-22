@@ -18,24 +18,36 @@ OLLAMA_LLM_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.1")
 
 
 def identify_query_node(state: GraphState) -> GraphState:
-    """Identifica o tipo de entidade e o nome alvo a partir da pergunta do usuário."""
+    """Identifica o tipo de entidade e o nome alvo a partir da pergunta do usuário, usando o histórico para resolver referências."""
     print(f"[nodes] Etapa: identify_query | pergunta: {state['question']}")
-    
+
     llm = ChatOllama(model=OLLAMA_LLM_MODEL, base_url=OLLAMA_BASE_URL, temperature=0.0)
+
+    history = state.get("chat_history") or []
+    history_text = "\n".join(f"{m['role']}: {m['content']}" for m in history) or "Nenhum historico anterior."
 
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", IDENTIFY_QUERY_SYSTEM_PROMPT,),
+            ("system", IDENTIFY_QUERY_SYSTEM_PROMPT),
             ("human", "{question}"),
         ]
     )
 
     chain = prompt | llm
-    result = chain.invoke({"question": state["question"]})
-    entity_type, _, target_name = result.content.partition("|")
+    result = chain.invoke({"question": state["question"], "history_text": history_text})
+
+    print(f"[nodes] Resposta bruta do identify: {result.content!r}")
+
+    valid_line = next(
+        (line.strip() for line in reversed(result.content.splitlines()) if "|" in line),
+        "",
+    )
+    entity_type, _, target_name = valid_line.partition("|")
 
     state["entity_type"] = entity_type.strip().lower()
-    state["target_name"] = target_name.strip()
+    state["target_name"] = target_name.strip()[:100]
+
+    print(f"[nodes] Entidade identificada: tipo={state['entity_type']!r} | nome={state['target_name']!r}")
     return state
 
 
@@ -103,27 +115,21 @@ def ingestion_node(state: GraphState) -> GraphState:
     return state
 
 
-def generation_node(state: GraphState) -> GraphState:
-    """Gera a resposta final com base no contexto recuperado ou extraído."""
-    print(f"[nodes] Etapa: generation | docs_disponiveis={len(state.get('retrieved_docs', []))}")
-
-    docs: List[dict] = state.get("retrieved_docs", [])
-
+def stream_generation(question: str, docs: List[dict]):
+    """Gera a resposta final em streaming, com base no contexto recuperado."""
     if not docs:
-        state["answer"] = CONTEXT_NOT_FOUND_MESSAGE
-        return state
+        yield CONTEXT_NOT_FOUND_MESSAGE
+        return
 
     llm = ChatOllama(model=OLLAMA_LLM_MODEL, base_url=OLLAMA_BASE_URL, temperature=0.2)
     prompt = ChatPromptTemplate.from_template(SYSTEM_PROMPT)
-
     chain = prompt | llm
-    result = chain.invoke(
+
+    for chunk in chain.stream(
         {
             "context": docs,
-            "question": state["question"],
+            "question": question,
             "CONTEXT_NOT_FOUND_MESSAGE": CONTEXT_NOT_FOUND_MESSAGE,
         }
-    )
-
-    state["answer"] = result.content
-    return state
+    ):
+        yield chunk.content

@@ -1,5 +1,9 @@
 IDENTIFY_QUERY_SYSTEM_PROMPT = """Identifique, na pergunta do usuário, o tipo de entidade (jogador, treinador, estadio, time, competicao ou partida) e o nome principal mencionado. Responda apenas no formato 'tipo|nome'.
 
+Use o histórico da conversa abaixo para resolver referências indiretas, como 'ele', 'esse jogador', 'o primeiro time dele':
+
+{history_text}
+
 Exemplos:
 Pergunta: Quem foi Pelé?
 Resposta: jogador|Pelé
@@ -10,13 +14,8 @@ Resposta: treinador|Real Madrid
 Pergunta: Quantos títulos o PAOK tem?
 Resposta: time|PAOK
 
-Pergunta: Onde fica o Maracanã?
-Resposta: estadio|Maracanã
-
-Pergunta: Quem foi Welington Rato?
-Resposta: jogador|Welington Rato
-
-Regra: se a pergunta for 'quem foi/é <nome próprio>' sem outro contexto, assuma jogador, a menos que o nome seja claramente de um clube, estádio ou competição."""
+IMPORTANTE: responda APENAS com a linha no formato 'tipo|nome', sem nenhuma explicação, raciocínio ou texto adicional antes ou depois.
+"""
 
 SYSTEM_PROMPT = """
 Você é um comentarista apaixonado e especialista em futebol, com vasto conhecimento sobre jogadores, times e competições pelo mundo.

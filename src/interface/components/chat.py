@@ -1,6 +1,9 @@
 import streamlit as st
 
 from src.pipeline.graph import graph
+from src.pipeline.nodes import stream_generation
+
+MAX_HISTORY_MESSAGES = 6
 
 
 def render_chat() -> None:
@@ -19,10 +22,14 @@ def render_chat() -> None:
         with st.chat_message("user"):
             st.markdown(question)
 
+        history = st.session_state["messages"][:-1][-MAX_HISTORY_MESSAGES:]
+
+        with st.spinner("Buscando informações..."):
+            result = graph.invoke({"question": question, "chat_history": history})
+
+        docs = result.get("retrieved_docs", [])
+
         with st.chat_message("assistant"):
-            with st.spinner("Analisando os dados..."):
-                result = graph.invoke({"question": question})
-                answer = result.get("answer", "Não foi possível gerar uma resposta.")
-                st.markdown(answer)
+            answer = st.write_stream(stream_generation(question, docs))
 
         st.session_state["messages"].append({"role": "assistant", "content": answer})
