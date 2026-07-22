@@ -108,12 +108,13 @@ def _flatten_club_names(entity: EntitySchema) -> List[str]:
         if stints:
             clubs.extend(stint.club for stint in stints)
 
-    return list(dict.fromkeys(clubs))  # remove duplicatas preservando ordem
+    return list(dict.fromkeys(clubs))  
 
 
-def _build_payload(entity: EntitySchema) -> Dict[str, Any]:
+def _build_payload(entity: EntitySchema, entity_type: str) -> Dict[str, Any]:
     """Serializa o objeto Pydantic em payload, achatando campos de filtro."""
     payload = entity.model_dump(mode="json")
+    payload["entity_type"] = entity_type  
 
     club_names = _flatten_club_names(entity)
     if club_names:
@@ -128,25 +129,20 @@ def _generate_point_id(entity_type: str, name: str) -> str:
     return hashlib.md5(raw_key.encode("utf-8")).hexdigest()
 
 
-def upsert_entity(entity: EntitySchema) -> str:
-    """
-    Gera o embedding do campo 'summary' e salva a entidade (vetor + payload)
-    no Qdrant. Retorna o ID do ponto inserido/atualizado.
-    """
+def upsert_entity(entity: EntitySchema, entity_type: str, canonical_name: Optional[str] = None) -> str:
     embeddings = get_embeddings()
     vector = embeddings.embed_query(entity.summary)
 
-    payload = _build_payload(entity)
-    point_id = _generate_point_id(entity.entity_type, entity.name)
+    payload = _build_payload(entity, entity_type)
+    name_for_id = canonical_name or entity.name
+    point_id = _generate_point_id(entity_type, name_for_id)
 
     point = PointStruct(id=point_id, vector=vector, payload=payload)
 
     get_client().upsert(collection_name=COLLECTION_NAME, points=[point])
-    logger.info(
-        "Entidade salva | tipo=%s | nome=%s | id=%s",
-        entity.entity_type,
-        entity.name,
-        point_id,
+    print(
+        f"[qdrant_client] Entidade salva | tipo={entity.entity_type} | "
+        f"nome_extraido={entity.name} | id_baseado_em={name_for_id} | id={point_id}"
     )
     return point_id
 
@@ -168,7 +164,6 @@ def _build_filter(
         )
 
     if must_include_clubs:
-        # Uma condição por clube -> exige presença de cada um (AND lógico)
         for club in must_include_clubs:
             conditions.append(
                 FieldCondition(key="club_names", match=MatchValue(value=club))
@@ -185,30 +180,20 @@ def search(
 ) -> List[Dict[str, Any]]:
     """
     Busca semântica no Qdrant, com filtro opcional de payload.
-
-    Args:
-        query: Pergunta/consulta do usuário.
-        top_k: Número de resultados a retornar.
-        entity_type: Filtra por tipo de entidade ('jogador', 'time', etc.).
-        must_include_clubs: Lista de clubes que a entidade deve ter em comum
-            (usado para consultas relacionais tipo "jogou no X e no Y").
-
-    Returns:
-        Lista de payloads dos pontos encontrados, ordenados por relevância.
     """
     embeddings = get_embeddings()
     query_vector = embeddings.embed_query(query)
 
     query_filter = _build_filter(entity_type, must_include_clubs)
 
-    results = get_client().search(
+    response = get_client().query_points(
         collection_name=COLLECTION_NAME,
-        query_vector=query_vector,
+        query=query_vector,
         query_filter=query_filter,
         limit=top_k,
     )
 
-    return [hit.payload for hit in results]
+    return [point.payload for point in response.points]
 
 
 def exists_by_name(name: str, entity_type: str) -> bool:
@@ -228,3 +213,24 @@ def delete_entity(name: str, entity_type: str) -> bool:
 
     get_client().delete(collection_name=COLLECTION_NAME, points_selector=[point_id])
     return True
+
+
+def find_similar_entity(name: str, entity_type: str, score_threshold: float = 0.9) -> Optional[Dict[str, Any]]:
+    """Busca uma entidade já cadastrada com nome semanticamente muito próximo, tolerando erros de digitação."""
+    embeddings = get_embeddings()
+    query_vector = embeddings.embed_query(name)
+
+    response = get_client().query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_vector,
+        query_filter=_build_filter(entity_type=entity_type),
+        limit=1,
+        score_threshold=score_threshold,
+    )
+
+    if response.points:
+        point = response.points[0]
+        print(f"[qdrant_client] Entidade similar encontrada: {point.payload.get('name')} (score={point.score:.3f})")
+        return point.payload
+
+    return None

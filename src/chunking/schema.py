@@ -37,8 +37,7 @@ class Stint(BaseModel):
 class Title(BaseModel):
     """Represents an achievement."""
     competition_name: str = Field(description="Nome do torneio conquistado.")
-    year: str = Field(description="Ano ou temporada da conquista. Ex: '2022', '2020/2021'")
-
+    year: Optional[str] = Field(default=None, description="Ano ou temporada da conquista. Ex: '2022', '2020/2021'")
 class Player(BaseModel):
     entity_type: str = Field(default="jogador", description="Identificador fixo da entidade")
     name: str = Field(description="Nome do jogador")

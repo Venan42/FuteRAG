@@ -6,7 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 
 from src.chunking.extractor import extract_entity
-from src.database.qdrant_client import exists_by_name, search, upsert_entity
+from src.database.qdrant_client import exists_by_name, search, upsert_entity, find_similar_entity
 from src.pipeline.prompt import IDENTIFY_QUERY_SYSTEM_PROMPT, CONTEXT_NOT_FOUND_MESSAGE, SYSTEM_PROMPT
 from src.pipeline.state import GraphState
 from src.retrieval.source_router import fetch_entity_text
@@ -56,15 +56,19 @@ def check_database_node(state: GraphState) -> GraphState:
     print(f"[nodes] Etapa: check_database | entity_type={state['entity_type']} | target_name={state['target_name']}")
 
     found = exists_by_name(state["target_name"], state["entity_type"])
-    state["found_in_db"] = found
 
-    if found:
-        state["retrieved_docs"] = search(
-            query=state["question"],
-            entity_type=state["entity_type"],
-        )
-    else:
-        state["retrieved_docs"] = []
+    if not found:
+        similar = find_similar_entity(state["target_name"], state["entity_type"])
+        if similar:
+            print(f"[nodes] Usando entidade similar em vez de extrair novamente: {similar.get('name')}")
+            state["found_in_db"] = True
+            state["retrieved_docs"] = [similar]
+            return state
+
+    state["found_in_db"] = found
+    state["retrieved_docs"] = (
+        search(query=state["question"], entity_type=state["entity_type"]) if found else []
+    )
 
     print(f"[nodes] Resultado: found_in_db={state['found_in_db']} | docs_recuperados={len(state['retrieved_docs'])}")
     return state
@@ -105,12 +109,13 @@ def ingestion_node(state: GraphState) -> GraphState:
     print(f"[nodes] Etapa: ingestion")
 
     entity = state.get("extracted_entity")
-
+    
     if entity is None:
         return state
 
-    upsert_entity(entity)
+    upsert_entity(entity, entity_type=state["entity_type"], canonical_name=state["target_name"])
     state["retrieved_docs"] = [entity.model_dump(mode="json")]
+
     print(f"[nodes] Entidade ingerida no Qdrant")
     return state
 

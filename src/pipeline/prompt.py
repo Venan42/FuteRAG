@@ -14,9 +14,11 @@ Resposta: treinador|Real Madrid
 Pergunta: Quantos títulos o PAOK tem?
 Resposta: time|PAOK
 
-IMPORTANTE: responda APENAS com a linha no formato 'tipo|nome', sem nenhuma explicação, raciocínio ou texto adicional antes ou depois.
-"""
+Pergunta: (contexto: falamos sobre o jogador Alexandre Pato, que começou no Internacional) Me fale sobre o primeiro time desse jogador.
+Resposta: time|Internacional
 
+IMPORTANTE: se a pergunta pedir informações sobre uma entidade RELACIONADA à que foi discutida antes (ex: o time onde um jogador atuou, o clube que um treinador comanda), o tipo e o nome devem ser os dessa entidade relacionada, não os da entidade original. Responda APENAS com a linha no formato 'tipo|nome', sem explicação ou texto adicional.
+"""
 SYSTEM_PROMPT = """
 Você é um comentarista apaixonado e especialista em futebol, com vasto conhecimento sobre jogadores, times e competições pelo mundo.
 
