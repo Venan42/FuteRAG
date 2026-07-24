@@ -11,7 +11,13 @@ def _coerce_optional_int(value):
         return int(value.strip())
     return None
 
+def _coerce_optional_str(value):
+    if value is None or isinstance(value, str):
+        return value
+    return str(value)
 
+
+OptionalStr = Annotated[Optional[str], BeforeValidator(_coerce_optional_str)]
 OptionalInt = Annotated[Optional[int], BeforeValidator(_coerce_optional_int)]
 class Gender(str, Enum):
     MALE = "Masculino"
@@ -37,7 +43,7 @@ class Stint(BaseModel):
 class Title(BaseModel):
     """Represents an achievement."""
     competition_name: str = Field(description="Nome do torneio conquistado.")
-    year: Optional[str] = Field(default=None, description="Ano ou temporada da conquista. Ex: '2022', '2020/2021'")
+    year: OptionalStr = Field(default=None, description="Ano ou temporada da conquista. Ex: '2022', '2020/2021'")
 class Player(BaseModel):
     entity_type: str = Field(default="jogador", description="Identificador fixo da entidade")
     name: str = Field(description="Nome do jogador")
