@@ -140,10 +140,12 @@ def upsert_entity(entity: EntitySchema, entity_type: str, canonical_name: Option
     point = PointStruct(id=point_id, vector=vector, payload=payload)
 
     get_client().upsert(collection_name=COLLECTION_NAME, points=[point])
+
     print(
-        f"[qdrant_client] Entidade salva | tipo={entity.entity_type} | "
+        f"[qdrant_client] Entidade salva | tipo={entity_type} | "
         f"nome_extraido={entity.name} | id_baseado_em={name_for_id} | id={point_id}"
     )
+
     return point_id
 
 
@@ -234,3 +236,9 @@ def find_similar_entity(name: str, entity_type: str, score_threshold: float = 0.
         return point.payload
 
     return None
+
+def get_entity_by_name(name: str, entity_type: str) -> Optional[Dict[str, Any]]:
+    """Recupera o payload de uma entidade pelo ID determinístico (nome + tipo)."""
+    point_id = _generate_point_id(entity_type, name)
+    result = get_client().retrieve(collection_name=COLLECTION_NAME, ids=[point_id])
+    return result[0].payload if result else None

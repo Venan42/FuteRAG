@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional, TypedDict
-
-from src.chunking.schema import EntitySchema
+import operator
+from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
 
 class GraphState(TypedDict):
@@ -8,11 +7,5 @@ class GraphState(TypedDict):
 
     question: str
     chat_history: Optional[List[Dict[str, str]]]
-    entity_type: Optional[str]
-    target_name: Optional[str]
-
-    found_in_db: bool
-    retrieved_docs: List[Dict[str, Any]]
-
-    raw_wikipedia_text: Optional[str]
-    extracted_entity: Optional[EntitySchema]
+    targets: List[Dict[str, str]]
+    retrieved_docs: Annotated[List[Dict[str, Any]], operator.add]
